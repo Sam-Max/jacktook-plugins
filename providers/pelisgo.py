@@ -3,6 +3,8 @@ from urllib.parse import quote
 
 import requests
 
+from _resolvers import resolve_vidsonic
+
 
 BASE_URL = "https://pelisgo.online"
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
@@ -92,15 +94,19 @@ def _download_ids(content_url, context):
 
 def _resolve_server(server, url):
     server = str(server or "").lower()
+    if "vidsonic" in server or "vidsonic.net/" in url:
+        resolved = resolve_vidsonic(url)
+        if resolved:
+            return resolved
     if "google drive" in server or "googledrive" in server:
         match = re.search(r"/d/([^/?&#]+)", url) or re.search(r"[?&]id=([^&]+)", url)
         if match:
-            return "https://drive.usercontent.google.com/download?id=%s&export=download&confirm=t" % match.group(1)
+            return {"url": "https://drive.usercontent.google.com/download?id=%s&export=download&confirm=t" % match.group(1), "headers": {"User-Agent": USER_AGENT, "Referer": BASE_URL + "/"}}
     if "pixeldrain" in server:
         match = re.search(r"pixeldrain\.com/u/([^?&#/]+)", url)
         if match:
-            return "https://pixeldrain.com/api/file/%s?download" % match.group(1)
-    return url
+            return {"url": "https://pixeldrain.com/api/file/%s?download" % match.group(1), "headers": {"User-Agent": USER_AGENT, "Referer": BASE_URL + "/"}}
+    return {"url": url, "headers": {"User-Agent": USER_AGENT, "Referer": BASE_URL + "/"}}
 
 
 def get_streams(context):
@@ -140,9 +146,10 @@ def get_streams(context):
             raw_url = data.get("url")
             if not raw_url:
                 continue
-            resolved_url = _resolve_server(data.get("server", ""), raw_url)
-            if not resolved_url or resolved_url in seen_urls:
+            resolved = _resolve_server(data.get("server", ""), raw_url)
+            if not resolved or not resolved.get("url") or resolved.get("url") in seen_urls:
                 continue
+            resolved_url = resolved.get("url")
             seen_urls.add(resolved_url)
             quality = str(data.get("quality") or "HD")
             language = str(data.get("language") or "Lat").upper()
@@ -155,7 +162,7 @@ def get_streams(context):
                     "url": resolved_url,
                     "quality": quality,
                     "languages": ["es"],
-                    "headers": {"User-Agent": USER_AGENT, "Referer": BASE_URL + "/"},
+                    "headers": resolved.get("headers") or {"User-Agent": USER_AGENT, "Referer": BASE_URL + "/"},
                 }
             )
         except Exception as exc:

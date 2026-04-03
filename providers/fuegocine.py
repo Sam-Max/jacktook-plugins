@@ -4,6 +4,8 @@ from urllib.parse import quote, unquote
 
 import requests
 
+from _resolvers import resolve_vidsonic
+
 
 BASE_URL = "https://www.fuegocine.com"
 SEARCH_BASE = BASE_URL + "/feeds/posts/default?alt=json&max-results=10&q="
@@ -108,6 +110,8 @@ def _server_name(url, fallback="FC"):
         return "GoogleDrive"
     if "ok.ru" in lowered:
         return "OK.RU"
+    if "vidsonic" in lowered:
+        return "VidSonic"
     if "voe.sx" in lowered:
         return "VOE"
     if "pixeldrain.com" in lowered:
@@ -152,6 +156,13 @@ def get_streams(context):
                 if not decoded_url:
                     continue
                 target_url = decoded_url
+                target_headers = {"User-Agent": USER_AGENT, "Referer": BASE_URL + "/"}
+                if "vidsonic.net/" in target_url:
+                    resolved = resolve_vidsonic(target_url)
+                    if not resolved:
+                        continue
+                    target_url = resolved.get("url")
+                    target_headers = resolved.get("headers") or target_headers
                 if "drive.google.com" in target_url:
                     drive_id = _extract_drive_id(target_url)
                     if drive_id:
@@ -170,7 +181,7 @@ def get_streams(context):
                         "url": target_url,
                         "quality": quality,
                         "languages": ["es"],
-                        "headers": {"User-Agent": USER_AGENT, "Referer": BASE_URL + "/"},
+                        "headers": target_headers,
                     }
                 )
         except Exception as exc:
