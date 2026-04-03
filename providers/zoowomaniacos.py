@@ -43,6 +43,10 @@ def _normalize(value):
 
 def _tmdb_metadata(tmdb_id, media_type, context):
     session = requests.Session()
+    search_terms = []
+    title = None
+    original_title = None
+    year = ""
     for language, label in TMDB_LANGUAGES:
         try:
             response = session.get(
@@ -53,21 +57,33 @@ def _tmdb_metadata(tmdb_id, media_type, context):
             )
             response.raise_for_status()
             data = response.json()
-            title = data.get("title") if media_type == "movie" else data.get("name")
-            original_title = (
+            localized_title = data.get("title") if media_type == "movie" else data.get("name")
+            localized_original_title = (
                 data.get("original_title") if media_type == "movie" else data.get("original_name")
             )
-            if not title:
+            if not localized_title:
                 continue
-            _log(context, "[Zoowomaniacos] TMDB {}: {}".format(label, title))
-            return {
-                "title": title,
-                "original_title": original_title,
-                "year": (data.get("release_date") or "")[:4],
-            }
+            if not title:
+                title = localized_title
+            if not original_title and localized_original_title:
+                original_title = localized_original_title
+            year = year or (data.get("release_date") or "")[:4]
+
+            for candidate in (localized_title, localized_original_title):
+                candidate = str(candidate or "").strip()
+                if candidate and candidate not in search_terms:
+                    search_terms.append(candidate)
+            _log(context, "[Zoowomaniacos] TMDB {}: {}".format(label, localized_title))
         except Exception as exc:
             _log(context, "[Zoowomaniacos] TMDB {} failed: {}".format(label, exc))
-    return None
+    if not title:
+        return None
+    return {
+        "title": title,
+        "original_title": original_title,
+        "year": year,
+        "search_terms": search_terms,
+    }
 
 
 def _search_zoowomaniacos(query, context):
@@ -211,9 +227,13 @@ def get_streams(context):
     if not metadata:
         return []
 
-    search_terms = [metadata.get("title")]
-    if metadata.get("original_title") and metadata.get("original_title") != metadata.get("title"):
-        search_terms.append(metadata.get("original_title"))
+    search_terms = []
+    for candidate in metadata.get("search_terms") or []:
+        if candidate and candidate not in search_terms:
+            search_terms.append(candidate)
+    query = str(context.get("query") or "").strip()
+    if query and query not in search_terms:
+        search_terms.append(query)
 
     selected = None
     for term in search_terms:
