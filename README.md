@@ -4,6 +4,7 @@ Streamflix-based Python plugin repository for Jacktook.
 
 ## Current plugins
 
+- `cinecalidad_sf`: movie and TV provider adapted from Streamflix's `CineCalidadProvider`.
 - `flixlatam`: movie and TV provider adapted from Streamflix's `FlixLatamProvider`.
 
 ## Current direction

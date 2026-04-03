@@ -1,8 +1,19 @@
 {
   "name": "Jacktook Plugins",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Streamflix-based Python plugin repository for Jacktook.",
   "scrapers": [
+    {
+      "id": "cinecalidad_sf",
+      "name": "CineCalidad",
+      "description": "Provider basado en Streamflix para CineCalidad.",
+      "version": "1.0.0",
+      "author": "OpenCode",
+      "supportedTypes": ["movie", "tv"],
+      "filename": "providers/cinecalidad_sf.py",
+      "enabled": true,
+      "contentLanguage": ["es"]
+    },
     {
       "id": "flixlatam",
       "name": "FlixLatam",

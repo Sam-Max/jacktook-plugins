@@ -75,9 +75,11 @@ def _search(query, context):
     response.raise_for_status()
     html = response.text
     items = []
-    for href, title in re.findall(r'<a[^>]+href="([^"]+)"[^>]*>.*?<h3>(.*?)</h3>', html, re.S):
-        clean_title = re.sub(r"<[^>]+>", "", title).strip()
-        items.append({"href": href, "title": clean_title})
+    for article in re.findall(r"<article class=\"item\">([\s\S]*?)</article>", html):
+        match = re.search(r'<h3><a href="([^"]+)">([^<]+)</a></h3>', article)
+        if not match:
+            continue
+        items.append({"href": match.group(1), "title": match.group(2).strip()})
     _log(context, "[FlixLatam] search returned %d items for %r" % (len(items), query))
     return items
 
