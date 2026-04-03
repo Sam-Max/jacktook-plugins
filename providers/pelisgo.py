@@ -57,6 +57,18 @@ def _resolve_vidsonic(embed_url):
     }
 
 
+def _is_probably_playable(url):
+    lowered = str(url or "").lower()
+    if not lowered.startswith(("http://", "https://")):
+        return False
+    blocked = (
+        "unlimplay.com/play.php/embed/",
+        "unlimplay.com/embed/",
+        "accounts.google.com/",
+    )
+    return not any(token in lowered for token in blocked)
+
+
 def _normalize_title(value):
     return re.sub(r"\s+", " ", str(value or "").lower()).strip()
 
@@ -130,11 +142,13 @@ def _resolve_server(server, url):
     if "google drive" in server or "googledrive" in server:
         match = re.search(r"/d/([^/?&#]+)", url) or re.search(r"[?&]id=([^&]+)", url)
         if match:
-            return {"url": "https://drive.usercontent.google.com/download?id=%s&export=download&confirm=t" % match.group(1), "headers": {"User-Agent": USER_AGENT, "Referer": BASE_URL + "/"}}
+            return None
     if "pixeldrain" in server:
         match = re.search(r"pixeldrain\.com/u/([^?&#/]+)", url)
         if match:
             return {"url": "https://pixeldrain.com/api/file/%s?download" % match.group(1), "headers": {"User-Agent": USER_AGENT, "Referer": BASE_URL + "/"}}
+    if not _is_probably_playable(url):
+        return None
     return {"url": url, "headers": {"User-Agent": USER_AGENT, "Referer": BASE_URL + "/"}}
 
 

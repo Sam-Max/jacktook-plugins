@@ -59,6 +59,18 @@ def _resolve_vidsonic(embed_url):
     }
 
 
+def _is_probably_playable(url):
+    lowered = str(url or "").lower()
+    if not lowered.startswith(("http://", "https://")):
+        return False
+    blocked = (
+        "unlimplay.com/play.php/embed/",
+        "unlimplay.com/embed/",
+        "accounts.google.com/",
+    )
+    return not any(token in lowered for token in blocked)
+
+
 def _search_entries(title, year, media_type, season, episode, context):
     query = "%s %s" % (title, year) if media_type == "movie" and year else title
     if media_type == "tv" and season and episode:
@@ -193,9 +205,10 @@ def get_streams(context):
                     target_url = resolved.get("url")
                     target_headers = resolved.get("headers") or target_headers
                 if "drive.google.com" in target_url:
-                    drive_id = _extract_drive_id(target_url)
-                    if drive_id:
-                        target_url = "https://drive.usercontent.google.com/download?id=%s&export=download&confirm=t" % drive_id
+                    continue
+                if not _is_probably_playable(target_url):
+                    _log(context, "[FuegoCine] skipping non-playable url: %s" % target_url)
+                    continue
                 if target_url in seen_urls:
                     continue
                 seen_urls.add(target_url)
