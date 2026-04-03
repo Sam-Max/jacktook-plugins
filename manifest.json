@@ -1,8 +1,19 @@
 {
   "name": "Jacktook Plugins",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Python plugin repository for Jacktook.",
   "scrapers": [
+    {
+      "id": "cinecalidad",
+      "name": "CineCalidad",
+      "description": "Peliculas en Latino desde CineCalidad.",
+      "version": "1.0.0",
+      "author": "OpenCode",
+      "supportedTypes": ["movie"],
+      "filename": "providers/cinecalidad.py",
+      "enabled": true,
+      "contentLanguage": ["es"]
+    },
     {
       "id": "pelisgo",
       "name": "PelisGO",
@@ -15,6 +26,17 @@
       "contentLanguage": ["es"]
     },
     {
+      "id": "lamovie",
+      "name": "LaMovie",
+      "description": "Streams en Latino/Espanol desde LaMovie.",
+      "version": "1.0.0",
+      "author": "OpenCode",
+      "supportedTypes": ["movie", "tv"],
+      "filename": "providers/lamovie.py",
+      "enabled": true,
+      "contentLanguage": ["es"]
+    },
+    {
       "id": "fuegocine",
       "name": "FuegoCine",
       "description": "Provider directo para FuegoCine con Blogger feed y enlaces externos.",
@@ -22,6 +44,28 @@
       "author": "OpenCode",
       "supportedTypes": ["movie", "tv"],
       "filename": "providers/fuegocine.py",
+      "enabled": true,
+      "contentLanguage": ["es"]
+    },
+    {
+      "id": "seriesmetro",
+      "name": "SeriesMetro",
+      "description": "Streams en Latino desde SeriesMetro. Fastream.",
+      "version": "1.0.0",
+      "author": "OpenCode",
+      "supportedTypes": ["movie", "tv"],
+      "filename": "providers/seriesmetro.py",
+      "enabled": true,
+      "contentLanguage": ["es"]
+    },
+    {
+      "id": "xupalace",
+      "name": "XuPalace",
+      "description": "Streams en Latino desde Xupalace.",
+      "version": "1.0.0",
+      "author": "OpenCode",
+      "supportedTypes": ["movie", "tv"],
+      "filename": "providers/xupalace.py",
       "enabled": true,
       "contentLanguage": ["es"]
     },
