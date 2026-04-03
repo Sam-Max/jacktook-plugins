@@ -4,6 +4,28 @@
   "description": "Python plugin repository for Jacktook.",
   "scrapers": [
     {
+      "id": "pelisgo",
+      "name": "PelisGO",
+      "description": "Peliculas y series con enlaces directos desde la API de PelisGO.",
+      "version": "1.0.0",
+      "author": "OpenCode",
+      "supportedTypes": ["movie", "tv"],
+      "filename": "providers/pelisgo.py",
+      "enabled": true,
+      "contentLanguage": ["es"]
+    },
+    {
+      "id": "fuegocine",
+      "name": "FuegoCine",
+      "description": "Provider directo para FuegoCine con Blogger feed y enlaces externos.",
+      "version": "1.0.0",
+      "author": "OpenCode",
+      "supportedTypes": ["movie", "tv"],
+      "filename": "providers/fuegocine.py",
+      "enabled": true,
+      "contentLanguage": ["es"]
+    },
+    {
       "id": "zoowomaniacos",
       "name": "Zoowomaniacos",
       "description": "Peliculas de culto y dificiles de encontrar. OkRu y Archive.org.",

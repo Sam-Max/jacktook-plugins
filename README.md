@@ -4,6 +4,8 @@ Python plugin repository for Jacktook.
 
 ## Current plugins
 
+- `pelisgo`: movie and TV provider backed by PelisGO direct download API responses.
+- `fuegocine`: movie and TV provider backed by FuegoCine Blogger entries and external links.
 - `zoowomaniacos`: movie-only provider ported from the Nuvio Latino providers set.
 
 ## Repository manifest
