@@ -3,8 +3,6 @@ from urllib.parse import quote
 
 import requests
 
-from _resolvers import resolve_vidsonic
-
 
 BASE_URL = "https://pelisgo.online"
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
@@ -26,6 +24,37 @@ def _headers(extra=None):
     if extra:
         headers.update(extra)
     return headers
+
+
+def _resolve_vidsonic(embed_url):
+    response = requests.get(
+        embed_url,
+        headers={
+            "User-Agent": USER_AGENT,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Referer": "https://vidsonic.net/",
+        },
+        timeout=10,
+    )
+    response.raise_for_status()
+    html = response.text
+    encoded_match = re.search(r"const\s+_0x1\s*=\s*'([^']+)'", html)
+    if not encoded_match:
+        return None
+
+    clean = encoded_match.group(1).replace("|", "")
+    decoded = "".join(chr(int(clean[index : index + 2], 16)) for index in range(0, len(clean), 2))
+    media_url = decoded[::-1]
+    if not media_url.startswith(("http://", "https://")):
+        return None
+
+    return {
+        "url": media_url,
+        "headers": {
+            "User-Agent": USER_AGENT,
+            "Referer": "https://vidsonic.net/",
+        },
+    }
 
 
 def _normalize_title(value):
@@ -95,7 +124,7 @@ def _download_ids(content_url, context):
 def _resolve_server(server, url):
     server = str(server or "").lower()
     if "vidsonic" in server or "vidsonic.net/" in url:
-        resolved = resolve_vidsonic(url)
+        resolved = _resolve_vidsonic(url)
         if resolved:
             return resolved
     if "google drive" in server or "googledrive" in server:

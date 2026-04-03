@@ -4,8 +4,6 @@ from urllib.parse import quote, unquote
 
 import requests
 
-from _resolvers import resolve_vidsonic
-
 
 BASE_URL = "https://www.fuegocine.com"
 SEARCH_BASE = BASE_URL + "/feeds/posts/default?alt=json&max-results=10&q="
@@ -28,6 +26,37 @@ def _headers(extra=None):
     if extra:
         headers.update(extra)
     return headers
+
+
+def _resolve_vidsonic(embed_url):
+    response = requests.get(
+        embed_url,
+        headers={
+            "User-Agent": USER_AGENT,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Referer": "https://vidsonic.net/",
+        },
+        timeout=10,
+    )
+    response.raise_for_status()
+    html = response.text
+    encoded_match = re.search(r"const\s+_0x1\s*=\s*'([^']+)'", html)
+    if not encoded_match:
+        return None
+
+    clean = encoded_match.group(1).replace("|", "")
+    decoded = "".join(chr(int(clean[index : index + 2], 16)) for index in range(0, len(clean), 2))
+    media_url = decoded[::-1]
+    if not media_url.startswith(("http://", "https://")):
+        return None
+
+    return {
+        "url": media_url,
+        "headers": {
+            "User-Agent": USER_AGENT,
+            "Referer": "https://vidsonic.net/",
+        },
+    }
 
 
 def _search_entries(title, year, media_type, season, episode, context):
@@ -158,7 +187,7 @@ def get_streams(context):
                 target_url = decoded_url
                 target_headers = {"User-Agent": USER_AGENT, "Referer": BASE_URL + "/"}
                 if "vidsonic.net/" in target_url:
-                    resolved = resolve_vidsonic(target_url)
+                    resolved = _resolve_vidsonic(target_url)
                     if not resolved:
                         continue
                     target_url = resolved.get("url")
