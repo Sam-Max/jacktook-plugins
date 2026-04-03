@@ -10,6 +10,7 @@ from _extractors_streamflix import extract_video
 
 
 BASE_URL = "https://flixlatam.com"
+TMDB_API_KEY = "439c478a771f35c05022f9feabcca01c"
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
 JSON_HEADERS = {
     "User-Agent": USER_AGENT,
@@ -35,6 +36,36 @@ def _normalize(value):
     return re.sub(r"\s+", " ", value).strip().lower()
 
 
+def _tmdb_metadata(tmdb_id, media_type, context):
+    if not tmdb_id:
+        return None
+    labels = (("es-MX", "Latino"), ("en-US", "English"))
+    terms = []
+    year = ""
+    for language, label in labels:
+        try:
+            response = requests.get(
+                "https://api.themoviedb.org/3/{}/{}".format(media_type, tmdb_id),
+                params={"api_key": TMDB_API_KEY, "language": language},
+                headers={"User-Agent": USER_AGENT},
+                timeout=5,
+            )
+            response.raise_for_status()
+            data = response.json()
+            title = data.get("title") if media_type == "movie" else data.get("name")
+            original_title = data.get("original_title") if media_type == "movie" else data.get("original_name")
+            year = year or (data.get("release_date") or data.get("first_air_date") or "")[:4]
+            for candidate in (title, original_title):
+                candidate = str(candidate or "").strip()
+                if candidate and candidate not in terms:
+                    terms.append(candidate)
+            if title:
+                _log(context, "[FlixLatam] TMDB %s: %s" % (label, title))
+        except Exception as exc:
+            _log(context, "[FlixLatam] TMDB %s failed: %s" % (label, exc))
+    return {"terms": terms, "year": year} if terms else None
+
+
 def _search(query, context):
     response = requests.get(
         "%s/search?s=%s" % (BASE_URL, quote(query)),
@@ -51,8 +82,14 @@ def _search(query, context):
     return items
 
 
-def _pick_show(items, query, media_type, context):
-    normalized_query = _normalize(query)
+def _pick_show(items, query, media_type, metadata, context):
+    normalized_terms = [_normalize(query)]
+    if metadata:
+        for candidate in metadata.get("terms") or []:
+            normalized = _normalize(candidate)
+            if normalized and normalized not in normalized_terms:
+                normalized_terms.append(normalized)
+    year = str((metadata or {}).get("year") or "")
     media_token = "/serie/" if media_type == "tv" else "/pelicula/"
     candidates = []
     for item in items:
@@ -61,13 +98,20 @@ def _pick_show(items, query, media_type, context):
             continue
         title = _normalize(item.get("title"))
         score = 0
-        if title == normalized_query:
-            score += 3
-        elif title and (title in normalized_query or normalized_query in title):
+        for normalized_query in normalized_terms:
+            if title == normalized_query:
+                score += 4
+            elif title and (title in normalized_query or normalized_query in title):
+                score += 2
+        if year and year in href:
+            score += 1
+        if re.search(r"\bgoat\b", title) and any(term == "goat" for term in normalized_terms):
             score += 1
         candidates.append((score, item))
     candidates.sort(key=lambda entry: entry[0], reverse=True)
     selected = candidates[0][1] if candidates else None
+    if candidates:
+        _log(context, "[FlixLatam] top matches: %s" % ", ".join(["%s (%s)" % (entry[1].get("title"), entry[0]) for entry in candidates[:3]]))
     _log(context, "[FlixLatam] selected show: %s" % (selected.get("href") if selected else "none"))
     return selected
 
@@ -175,6 +219,8 @@ def _get_servers(page_url, context):
         except Exception as exc:
             _log(context, "[FlixLatam] iframe processing failed: %s" % exc)
     _log(context, "[FlixLatam] extracted %d server candidates" % len(servers))
+    if servers:
+        _log(context, "[FlixLatam] server candidates: %s" % ", ".join(["%s -> %s" % (server.get("name"), server.get("url")) for server in servers[:8]]))
     return servers, html
 
 
@@ -186,8 +232,9 @@ def get_streams(context):
     if media_type not in ("movie", "tv") or not query:
         return []
 
+    metadata = _tmdb_metadata((context.get("ids") or {}).get("tmdb_id"), media_type, context)
     items = _search(query, context)
-    selected = _pick_show(items, query, media_type, context)
+    selected = _pick_show(items, query, media_type, metadata, context)
     if not selected:
         return []
     show_url = _show_page(selected["href"])
