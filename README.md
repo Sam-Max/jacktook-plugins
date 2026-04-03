@@ -1,16 +1,22 @@
 # Jacktook Plugins
 
-Python plugin repository for Jacktook.
+Streamflix-based Python plugin repository for Jacktook.
 
 ## Current plugins
 
-- `cinecalidad`: movie provider for CineCalidad.
-- `pelisgo`: movie and TV provider backed by PelisGO direct download API responses.
-- `lamovie`: movie and TV provider backed by LaMovie player endpoints.
-- `fuegocine`: movie and TV provider backed by FuegoCine Blogger entries and external links.
-- `seriesmetro`: movie and TV provider backed by SeriesMetro and Fastream.
-- `xupalace`: movie and TV provider backed by XuPalace direct embed pages.
-- `zoowomaniacos`: movie-only provider ported from the Nuvio Latino providers set.
+- `flixlatam`: movie and TV provider adapted from Streamflix's `FlixLatamProvider`.
+
+## Current direction
+
+This repository is being rebuilt around the Streamflix provider/extractor model rather than the earlier Nuvio-style quick ports.
+
+The first implementation is `flixlatam`, backed by a shared extractor layer for hosts such as:
+
+- `goodstream`
+- `streamwish` / `hlswish`
+- `voe`
+- `vidsonic`
+- `ok.ru`
 
 ## Repository manifest
 
