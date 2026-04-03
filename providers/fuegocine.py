@@ -66,9 +66,24 @@ def _is_probably_playable(url):
     blocked = (
         "unlimplay.com/play.php/embed/",
         "unlimplay.com/embed/",
+        "unlimplay.com/play/embed/",
         "accounts.google.com/",
     )
-    return not any(token in lowered for token in blocked)
+    if any(token in lowered for token in blocked):
+        return False
+    if any(token in lowered for token in (
+        ".m3u8",
+        ".mp4",
+        "pixeldrain.com/api/file/",
+        "okcdn.ru/",
+        "archive.org/download/",
+        "googleusercontent.com/",
+        "rumble.cloud/",
+        "goodstream.one/",
+        "fastream.to/",
+    )):
+        return True
+    return False
 
 
 def _search_entries(title, year, media_type, season, episode, context):

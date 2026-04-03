@@ -64,9 +64,27 @@ def _is_probably_playable(url):
     blocked = (
         "unlimplay.com/play.php/embed/",
         "unlimplay.com/embed/",
+        "unlimplay.com/play/embed/",
         "accounts.google.com/",
+        "buzzheavier.com/",
+        "mediafire.com/",
+        "ranoz.gg/",
     )
-    return not any(token in lowered for token in blocked)
+    if any(token in lowered for token in blocked):
+        return False
+    if any(token in lowered for token in (
+        ".m3u8",
+        ".mp4",
+        "pixeldrain.com/api/file/",
+        "okcdn.ru/",
+        "archive.org/download/",
+        "googleusercontent.com/",
+        "rumble.cloud/",
+        "goodstream.one/",
+        "fastream.to/",
+    )):
+        return True
+    return False
 
 
 def _normalize_title(value):
@@ -193,6 +211,9 @@ def get_streams(context):
             if not resolved or not resolved.get("url") or resolved.get("url") in seen_urls:
                 continue
             resolved_url = resolved.get("url")
+            if not _is_probably_playable(resolved_url):
+                _log(context, "[PelisGO] skipping non-playable url: %s" % resolved_url)
+                continue
             seen_urls.add(resolved_url)
             quality = str(data.get("quality") or "HD")
             language = str(data.get("language") or "Lat").upper()
